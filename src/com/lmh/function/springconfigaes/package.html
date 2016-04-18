@@ -1,0 +1,17 @@
+<html>
+<body>
+<P>spring 配置文件关键属性加密功能</P>
+使用方法：
+1.在spring的配置文件如：root-servlet.xml中，加载config.properties文件之前
+  加入下面的解密bean：
+  	<bean id="config" class="com.lutongnet.cps.base.dao.DecryptPropertyPlaceholderConfigurer">
+		<property name="locations">
+            <list>      
+                <value>classpath:config.properties</value>
+            </list>
+        </property>
+        <property name="fileEncoding" value="utf-8"/>
+	</bean>
+2.把这个文件夹下的三个加密解密文件拷贝到项目的某个目录，再修正上面的class路径即可
+</body>
+</html>
