@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans>
+	<!-- 使用工厂bean创建客户端实例  -->
+	<bean id="memcachedClient" factory-bean="memcachedClientBuilder"
+	        factory-method="build" destroy-method="shutdown">
+	</bean>
+	
+	<!-- 客户端配置 -->
+	<bean id="memcachedClientBuilder" class="net.rubyeye.xmemcached.XMemcachedClientBuilder">
+		<!-- 构造函数，两个参数，第一个为缓存服务列表，第二个为缓存的权重  -->
+        <constructor-arg>
+                <list>
+                        <bean class="java.net.InetSocketAddress">
+                                <constructor-arg>
+                                        <value>172.16.4.194</value>
+                                </constructor-arg>
+                                <constructor-arg>
+                                        <value>11211</value>
+                                </constructor-arg>
+                        </bean>
+                        <bean class="java.net.InetSocketAddress">
+                                <constructor-arg>
+                                        <value>172.16.1.114</value>
+                                </constructor-arg>
+                                <constructor-arg>
+                                        <value>11211</value>
+                                </constructor-arg>
+                        </bean>
+                        <bean class="java.net.InetSocketAddress">
+                                <constructor-arg>
+                                        <value>172.16.1.114</value>
+                                </constructor-arg>
+                                <constructor-arg>
+                                        <value>11212</value>
+                                </constructor-arg>
+                        </bean>
+                </list>
+        </constructor-arg>
+        <constructor-arg>
+	        	<list>
+	                    <value>1</value>
+	                    <value>2</value>
+	                    <value>3</value>
+	            </list>
+        </constructor-arg>
+        <!-- 链接池大小  -->
+        <property name="connectionPoolSize" value="50"></property>
+        <!-- 设置当请求某个节点的key失败此请求如何结束，true表示失败告终；还可以Redistribute重新分配  -->
+        <property name="failureMode" value="true"></property>
+        <property name="sessionLocator">
+        		<!-- 使用一致性哈希算法 -->
+                <bean class="net.rubyeye.xmemcached.impl.KetamaMemcachedSessionLocator"></bean>
+        </property>
+        <property name="commandFactory">
+                <bean class="net.rubyeye.xmemcached.command.TextCommandFactory"></bean>
+        </property>
+        <property name="transcoder">
+                <bean class="net.rubyeye.xmemcached.transcoders.SerializingTranscoder" />
+        </property>
+	</bean>
+</beans>
+
