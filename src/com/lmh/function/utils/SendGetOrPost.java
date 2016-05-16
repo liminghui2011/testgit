@@ -12,7 +12,21 @@ import java.net.URLConnection;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpRequestRetryHandler;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.protocol.HttpContext;
+import org.apache.http.util.EntityUtils;
+
+@SuppressWarnings("deprecation")
 public class SendGetOrPost {
+	
+	private static final String CHARSET_NAME = "UTF-8";
+	
 	/**
 	 * 向指定URL发送GET方法的请求
 	 * 
@@ -119,6 +133,88 @@ public class SendGetOrPost {
 			}
 		}
 		return result;
+	}
+	
+	/**
+	 * 使用httpclient包封装的get请求
+	 * @param url 请求地址
+	 * @param jsessionId sessionID会保存到cookie中
+	 * @return
+	 */
+	public static String HttpClientGet(String url, String jsessionId)
+	{
+		DefaultHttpClient httpclient = null;
+		HttpGet get = null;
+		try
+		{
+			httpclient = new DefaultHttpClient();
+			get = new HttpGet(url);
+			get.setHeader("Cookie", "JSESSIONID=" + jsessionId);
+			HttpResponse response = httpclient.execute(get);
+			HttpEntity entity = response.getEntity();
+			String rsp = EntityUtils.toString(entity, CHARSET_NAME);
+			return rsp;
+		}
+		catch (Exception e)
+		{
+			throw new RuntimeException(e);
+		}
+		finally
+		{
+			try
+			{
+				httpclient.getConnectionManager().shutdown();
+			}
+			catch (Exception ignore)
+			{
+			}
+		}
+	}
+	
+	/**
+	 * 使用httpclient包封装的post请求
+	 * @param url 请求地址
+	 * @param content 请求参数
+	 * @return
+	 */
+	public static String post(final String url, String content){
+		DefaultHttpClient httpclient = null;
+		HttpPost post = null;
+		try
+		{
+			httpclient = new DefaultHttpClient();
+			httpclient.setHttpRequestRetryHandler(new HttpRequestRetryHandler() 
+			{
+				@Override
+				public boolean retryRequest(IOException ioex, int retryCount, HttpContext httpContext) 
+				{
+					return retryCount<=10;
+				}
+			});
+			post = new HttpPost(url);
+			post.setHeader("Content-Type", "application/json;charset=" + CHARSET_NAME);
+			post.setEntity(new StringEntity(content, CHARSET_NAME));
+			HttpResponse response = httpclient.execute(post);
+			HttpEntity entity = response.getEntity();
+			String rsp = EntityUtils.toString(entity, CHARSET_NAME);
+			return rsp;
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace();
+			throw new RuntimeException(e);
+		}
+		finally
+		{
+			try
+			{
+				httpclient.getConnectionManager().shutdown();
+			}
+			catch (Exception ignore)
+			{
+			}
+		}
+
 	}
 
 	/**

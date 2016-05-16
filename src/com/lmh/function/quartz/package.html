@@ -1,0 +1,13 @@
+<html>
+<body>
+<P>
+quartz框架实现的定时任务功能,使用方法(针对web应用)：
+1.在web.xml配置监听器
+	<listener>
+		<listener-class>com.lmh.function.quartz.QuartzJobsLoad</listener-class>
+	</listener>
+2.在spring配置文件中配置工厂类
+	<bean id="schedulerFactoryBean" class="org.springframework.scheduling.quartz.SchedulerFactoryBean"/>
+</p>
+</body>
+</html>
