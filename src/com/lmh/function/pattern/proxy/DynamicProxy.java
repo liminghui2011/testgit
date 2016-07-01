@@ -4,6 +4,14 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 
+/**
+ * 基于JDK实现的动态代理，被代理类必须实现至少一个接口，否则无法实现代理。
+ * @Title: DynamicProxy.java 
+ * @Package com.lmh.function.pattern.proxy 
+ * @Description: 
+ * @author liminghui   
+ * @version V1.0
+ */
 public class DynamicProxy implements InvocationHandler {
 	
 	private Object obj;

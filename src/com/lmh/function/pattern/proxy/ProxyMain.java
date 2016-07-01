@@ -10,7 +10,11 @@ public class ProxyMain {
 		//proxy.method();
 		
 		TargetInterface interface1 = (TargetInterface) DynamicProxy.getProxyInstanceFactory(new SourceClass());
-		interface1.method();
+		//interface1.method();
+		
+		CglibDynamicProxy cglibDynamicProxy = new CglibDynamicProxy();
+		SourceClass sourceClass = (SourceClass) cglibDynamicProxy.getProxyInstance(new SourceClass());
+		sourceClass.method();
 	}
 
 }
