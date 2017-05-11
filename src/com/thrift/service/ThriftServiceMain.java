@@ -2,87 +2,179 @@ package com.thrift.service;
 
 import org.apache.thrift.TProcessor;
 import org.apache.thrift.protocol.TBinaryProtocol;
+import org.apache.thrift.server.THsHaServer;
 import org.apache.thrift.server.TNonblockingServer;
 import org.apache.thrift.server.TServer;
+import org.apache.thrift.server.TSimpleServer;
+import org.apache.thrift.server.TThreadPoolServer;
 import org.apache.thrift.transport.TFramedTransport;
 import org.apache.thrift.transport.TNonblockingServerSocket;
-import org.apache.thrift.transport.TTransportException;
-
-import org.apache.thrift.TProcessor;  
-import org.apache.thrift.protocol.TBinaryProtocol;  
-import org.apache.thrift.protocol.TBinaryProtocol.Factory;  
-import org.apache.thrift.server.TServer;  
-import org.apache.thrift.server.TSimpleServer;  
-import org.apache.thrift.server.TThreadPoolServer;  
-import org.apache.thrift.server.TThreadPoolServer.Args;  
-import org.apache.thrift.transport.TServerSocket;  
-import org.apache.thrift.transport.TServerTransport;  
-import org.apache.thrift.transport.TTransportException; 
+import org.apache.thrift.transport.TServerSocket;
 
 public class ThriftServiceMain
 {
 
-	private static int m_thriftPort = 12356;
-	private static TestThriftServiceImpl m_myService = new TestThriftServiceImpl();
-	private static TServer m_server = null;
-
-	private static void createNonblockingServer() throws TTransportException
-	{
-		TProcessor tProcessor = new TestThriftService.Processor<TestThriftService.Iface>(
-				m_myService);
-		TNonblockingServerSocket nioSocket = new TNonblockingServerSocket(
-				m_thriftPort);
-		TNonblockingServer.Args tnbArgs = new TNonblockingServer.Args(nioSocket);
-		tnbArgs.processor(tProcessor);
-		tnbArgs.transportFactory(new TFramedTransport.Factory());
-		tnbArgs.protocolFactory(new TBinaryProtocol.Factory());
-		
-		// 使用非阻塞式IO，服务端和客户端需要指定TFramedTransport数据传输的方式
-		m_server = new TNonblockingServer(tnbArgs);
-	}
-
-	public static boolean start()
-	{
-		try
-		{
-			createNonblockingServer();
-		}
-		catch (TTransportException e)
-		{
-			System.out.println("start server error!" + e);
-			return false;
-		}
-		System.out.println("service at port: " + m_thriftPort);
-		m_server.serve();
-		return true;
-	}
+	private static int SERVER_PORT = 7911;
 
 	public static void main(String[] args)
 	{
-//		if (!start())
-//		{
-//			System.exit(0);
-//		}
-		try{  
-			// 设置服务器端口为7911
-			TServerSocket serverTransport = new TServerSocket(7911);
-			// 设置协议工厂为TBinaryProtocol.Factory
-			Factory proFactory = new TBinaryProtocol.Factory();
-			// 关联处理器与Hello服务的实现
-			TProcessor processor = new TestThriftService.Processor<TestThriftService.Iface>(
-					new TestThriftServiceImpl());
-			TServer.Args tArgs = new TServer.Args(serverTransport);
-			tArgs.processor(processor);
-			tArgs.protocolFactory(proFactory);
-			// 使用TSimpleServer
-			TServer server = new TSimpleServer(tArgs);
-			System.out.println("Start server on port 7911....");
-			server.serve();
-		}
-		catch (TTransportException e)
+
+//		singleThreadModel();
+//		threadPoolModel();
+//		nonblockIOModel();
+//		halfAsyncAndSyncModel();
+		asyncModel();
+
+	}
+
+	/**
+	 * 单线程服务端模型
+	 */
+	public static void singleThreadModel()
+	{
+		try
 		{
+			System.out.println("HelloWorld TSimpleServer start ....");
+
+			TProcessor tprocessor = new TestThriftService.Processor<TestThriftService.Iface>(
+					new TestThriftServiceImpl());
+
+			// 简单的单线程服务模型，一般用于测试
+			TServerSocket serverTransport = new TServerSocket(SERVER_PORT);
+			TServer.Args tArgs = new TServer.Args(serverTransport);
+			tArgs.processor(tprocessor);
+			tArgs.protocolFactory(new TBinaryProtocol.Factory());
+			// tArgs.protocolFactory(new TCompactProtocol.Factory());
+			// tArgs.protocolFactory(new TJSONProtocol.Factory());
+			TServer server = new TSimpleServer(tArgs);
+			server.serve();
+
+		}
+		catch (Exception e)
+		{
+			System.out.println("Server start error!!!");
 			e.printStackTrace();
 		}
 	}
 
+	/**
+	 * 线程池服务端模型
+	 */
+	public static void threadPoolModel()
+	{
+		try
+		{
+			System.out.println("HelloWorld TThreadPoolServer start ....");
+
+			TProcessor tprocessor = new TestThriftService.Processor<TestThriftService.Iface>(
+					new TestThriftServiceImpl());
+
+			TServerSocket serverTransport = new TServerSocket(SERVER_PORT);
+			TThreadPoolServer.Args ttpsArgs = new TThreadPoolServer.Args(
+					serverTransport);
+			ttpsArgs.processor(tprocessor);
+			ttpsArgs.protocolFactory(new TBinaryProtocol.Factory());
+
+			// 线程池服务模型，使用标准的阻塞式IO，预先创建一组线程处理请求。
+			TServer server = new TThreadPoolServer(ttpsArgs);
+			server.serve();
+		}
+		catch (Exception e)
+		{
+			System.out.println("Server start error!!!");
+			e.printStackTrace();
+		}
+	}
+	
+	/**
+	 * 非阻塞式IO模型
+	 */
+	public static void nonblockIOModel()
+	{
+		try
+		{
+			System.out.println("HelloWorld TThreadPoolServer start ....");
+
+			TProcessor tprocessor = new TestThriftService.Processor<TestThriftService.Iface>(
+					new TestThriftServiceImpl());
+
+			TNonblockingServerSocket tnbSocketTransport = new TNonblockingServerSocket(
+					SERVER_PORT);
+			TNonblockingServer.Args tnbArgs = new TNonblockingServer.Args(
+					tnbSocketTransport);
+			tnbArgs.processor(tprocessor);
+			tnbArgs.transportFactory(new TFramedTransport.Factory());
+			tnbArgs.protocolFactory(new TBinaryProtocol.Factory());
+ 
+			// 使用非阻塞式IO，服务端和客户端需要指定TFramedTransport数据传输的方式
+			TServer server = new TNonblockingServer(tnbArgs);
+			server.serve();
+		}
+		catch (Exception e)
+		{
+			System.out.println("Server start error!!!");
+			e.printStackTrace();
+		}
+	}
+	
+	/**
+	 * 半同步半异步模型
+	 */
+	public static void halfAsyncAndSyncModel()
+	{
+		try
+		{
+			System.out.println("HelloWorld TThreadPoolServer start ....");
+
+			TProcessor tprocessor = new TestThriftService.Processor<TestThriftService.Iface>(
+					new TestThriftServiceImpl());
+
+			TNonblockingServerSocket tnbSocketTransport = new TNonblockingServerSocket(
+					SERVER_PORT);
+			THsHaServer.Args thhsArgs = new THsHaServer.Args(tnbSocketTransport);
+			thhsArgs.processor(tprocessor);
+			thhsArgs.transportFactory(new TFramedTransport.Factory());
+			thhsArgs.protocolFactory(new TBinaryProtocol.Factory());
+ 
+			//半同步半异步的服务模型
+			TServer server = new THsHaServer(thhsArgs);
+			server.serve();
+		}
+		catch (Exception e)
+		{
+			System.out.println("Server start error!!!");
+			e.printStackTrace();
+		}
+	}
+	
+	/**
+	 * 异步模型
+	 */
+	public static void asyncModel()
+	{
+		try
+		{
+			System.out.println("HelloWorld TThreadPoolServer start ....");
+
+			TProcessor tprocessor = new TestThriftService.Processor<TestThriftService.Iface>(
+					new TestThriftServiceImpl());
+
+			TNonblockingServerSocket tnbSocketTransport = new TNonblockingServerSocket(
+					SERVER_PORT);
+			TNonblockingServer.Args tnbArgs = new TNonblockingServer.Args(
+					tnbSocketTransport);
+			tnbArgs.processor(tprocessor);
+			tnbArgs.transportFactory(new TFramedTransport.Factory());
+			tnbArgs.protocolFactory(new TBinaryProtocol.Factory());
+ 
+			// 使用非阻塞式IO，服务端和客户端需要指定TFramedTransport数据传输的方式
+			TServer server = new TNonblockingServer(tnbArgs);
+			server.serve();
+		}
+		catch (Exception e)
+		{
+			System.out.println("Server start error!!!");
+			e.printStackTrace();
+		}
+	}
 }
