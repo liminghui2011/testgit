@@ -29,8 +29,8 @@ public class ThriftClientMain
  
 	public static void main(String[] args)
 	{
-//		singleOrPoolClientModel();
-//		nonblockIOClientModel();
+		singleOrPoolClientModel();
+		nonblockIOClientModel();
 		new ThriftClientMain().asyncClient();
 	}
 
